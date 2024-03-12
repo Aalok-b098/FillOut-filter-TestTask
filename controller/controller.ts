@@ -59,23 +59,23 @@ function applyFilters(apiResponse: any[], filters: ResponseFiltersTypOne) {
 }
 
 function filterDataByDate(filteredData: any, afterDate?: string, beforeDate?: string) {
-    if (!afterDate && !beforeDate) {
-      return filteredData;
-    }
+    let newFilterData = []; 
 
     if(afterDate) {
-        return filteredData.responses.map((item: any) => 
+        newFilterData = filteredData.responses.map((item: any) => 
             new Date(afterDate).toISOString() > new Date(item.submissionTime).toISOString()
             ? null : item
         )
     }
 
     if(beforeDate){
-        return filteredData.responses.map((item: any) => 
+        newFilterData = filteredData.responses.map((item: any) => 
             new Date(item.submissionTime).toISOString() > new Date(beforeDate).toISOString()
             ? null : item
         )
     }
+
+    return newFilterData.filter(Boolean)
   }
 
 
@@ -120,13 +120,13 @@ export const getData = async (req: any, res: any) => {
       ? applyFilters(prevApiResponse.responses, filterData)
       : prevApiResponse;
 
-    const filterNewData = await filterDataByDate(filteredData, afterDate, beforeDate);
-    
-    const responseObj = {
-        responses: filterNewData.filter(Boolean),
-        totalResponses: filterNewData.filter(Boolean).length,
+      if (!afterDate && !beforeDate) {
+        res.json({ ...filteredData, pageCount });
+    } else {
+        const filterNewData = await filterDataByDate(filteredData, afterDate, beforeDate);
+        res.json({ responses:[...filterNewData], totalResponses: filterNewData.length ,pageCount });
     }
-    res.json({ ...responseObj, pageCount });
+    
   } catch (error: any) {
     console.log("error", error);
   }
